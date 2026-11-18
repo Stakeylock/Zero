@@ -28,11 +28,31 @@ Rebuild everything with `python clean_events.py` (needs pandas). The script chec
 | 6 | `device_type` / `country` blank | 131 / 47 kept | Fill with `unknown` | Keeps the row and makes the missing value explicit. |
 | 7 | Kids profile watching an R or TV-MA title | 46 | **Flag only** (`kids_profile_mature_title`) | Could be a mislabelled profile or real behaviour. Downstream can decide. |
 
+### Completion (derived, replaces the source flag)
+
+The source `completed` flag disagrees with watch time far too often to trust. It is renamed **`completed_raw`** and kept for reference only.
+
+- **`completion_ratio`** = `watch_seconds / (runtime_minutes × 60)`, capped at 1.0. It is left blank when watch time or runtime is missing.
+- **`completed_derived`** = `completion_ratio ≥ 0.9`. It is blank wherever the ratio is blank.
+- **Series caveat:** `runtime_minutes` for a series is the length of one episode. So for series the ratio means *"finished at least one episode"*, **not** "finished the series". A series can be capped at 1.0 after a single long session.
+
+| | Events |
+|---|---|
+| Completion derived | 4,570 |
+| Not derivable (113 missing watch time, 104 missing runtime, 1 missing both) | 216 |
+| `completed_raw` ≠ `completed_derived` | 1,799 (39.4% of derivable) |
+| … raw True, derived False | 1,459 |
+| … raw False, derived True | 340 |
+
+### Checks (asserted in the script)
+- Kept + quarantined = 5,000.
+- Every kept event matches exactly one catalog title. The join is on `title_id` only, catalog IDs are unique, and the join neither drops nor duplicates rows.
+- No holdout event is dated before 2026-11-10, and no train event is dated on or after it.
+
 ### Catalog notes (the catalog itself is unchanged)
 - **Duplicate names with different IDs:** *Dead Air Frequency* (TT-0054 / TT-0155) and *The Quiet Ward* (TT-0021 / TT-0299) are different titles. Always join on `title_id`, never on the name.
 - **Missing `runtime_minutes`:** 10 titles (listed in the log), so completion ratios can't be worked out for them.
 - **Not yet released:** TT-0300 *Pancake Summit* comes out 2026-11-20 and has no events.
 
 ### Known noise left as is
-- `completed` often disagrees with `watch_seconds` / runtime. It's widespread and has no clear rule to fix it, so treat it as a weak signal.
 - Most members appear in several countries and both profile types. This looks like normal account sharing or travel, not an error.

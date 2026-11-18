@@ -25,6 +25,7 @@ CUTOFF_DATE = pd.Timestamp("2026-11-10")  # first day of the hidden final week
 END_DATE = pd.Timestamp("2026-11-16")     # last day in the export
 MAX_WATCH_SECONDS = 3600                  # every plausible event is <= 1 hour; corrupt ones are 8-24 h
 MATURE = {"R", "TV-MA"}
+COMPLETION_THRESHOLD = 0.9                # completed_derived = completion_ratio >= this
 
 log = {}
 
@@ -35,7 +36,7 @@ log["raw_events"] = len(ev)
 # ---- types -----------------------------------------------------------------
 ev["event_date"] = pd.to_datetime(ev["event_datetime"], format="%Y-%m-%d")
 ev["watch_seconds"] = pd.to_numeric(ev["watch_seconds"].replace("", None))
-ev["completed"] = ev["completed"].map({"True": True, "False": False})
+ev["completed_raw"] = ev.pop("completed").map({"True": True, "False": False})  # reference only
 cat["release_date"] = pd.to_datetime(cat["release_date"], format="%Y-%m-%d")
 cat["runtime_minutes"] = pd.to_numeric(cat["runtime_minutes"].replace("", None))
 cat["is_new_series"] = cat["is_new_series"].map({"true": True, "false": False})
@@ -81,12 +82,33 @@ for col in ["device_type", "country"]:
     log[f"{col}_filled_unknown"] = int(blank.sum())
     ev.loc[blank, col] = "unknown"
 
-# ---- 6. join catalog (every remaining event matches exactly one title) -----
+# ---- 6. join catalog on title_id ONLY (names are not unique) --------------
 cat_cols = ["title_id", "title_name", "title_type", "primary_genre", "secondary_genre",
             "release_date", "maturity_rating", "runtime_minutes"]
 n_before = len(ev)
+assert cat["title_id"].is_unique, "catalog title_id must be unique"
 ev = ev.merge(cat[cat_cols], on="title_id", how="inner", validate="many_to_one")
 assert len(ev) == n_before, "catalog join lost or duplicated rows"
+assert ev["event_id"].is_unique and ev["title_name"].notna().all(),     "every kept event must match exactly one catalog title"
+
+# ---- 6b. completion derived from watch time vs runtime ---------------------
+# For series, runtime_minutes is one episode, so the ratio means
+# "finished at least one episode", not "finished the series".
+ratio = ev["watch_seconds"] / (ev["runtime_minutes"] * 60)
+ev["completion_ratio"] = ratio.clip(upper=1.0).round(4)          # NaN when either input missing
+ev["completed_derived"] = (ev["completion_ratio"] >= COMPLETION_THRESHOLD).astype("boolean")
+ev.loc[ev["completion_ratio"].isna(), "completed_derived"] = pd.NA
+has = ev["completed_derived"].notna()
+log["completion_derived"] = int(has.sum())
+log["completion_not_derivable"] = int((~has).sum())
+log["completion_not_derivable_missing_watch"] = int(ev["watch_seconds"].isna().sum())
+log["completion_not_derivable_missing_runtime"] = int(ev["runtime_minutes"].isna().sum())
+both = ev[has]
+disagree = both["completed_raw"] != both["completed_derived"]
+log["completion_raw_vs_derived_disagree"] = int(disagree.sum())
+log["completion_raw_vs_derived_disagree_pct"] = round(100 * disagree.mean(), 1)
+log["completion_raw_true_derived_false"] = int((both["completed_raw"] & ~both["completed_derived"]).sum())
+log["completion_raw_false_derived_true"] = int((~both["completed_raw"] & both["completed_derived"]).sum())
 
 # flag (do not drop): kids profile watching R / TV-MA
 ev["kids_profile_mature_title"] = (ev["profile_type"] == "kids") & ev["maturity_rating"].isin(MATURE)
@@ -110,7 +132,9 @@ log.update({
     "catalog_missing_runtime": cat.loc[cat.runtime_minutes.isna(), "title_id"].tolist(),
     "catalog_unreleased_titles": cat.loc[cat.release_date > END_DATE, "title_id"].tolist(),
 })
-assert log["raw_events"] == log["clean_events"] + log["quarantined_total"]
+assert log["raw_events"] == 5000 == log["clean_events"] + log["quarantined_total"]
+assert (hold["event_date"] >= CUTOFF_DATE).all(), "holdout event dated before cutoff"
+assert (train["event_date"] < CUTOFF_DATE).all(), "train event dated on/after cutoff"
 
 # ---- write -----------------------------------------------------------------
 OUT.mkdir(parents=True, exist_ok=True)
