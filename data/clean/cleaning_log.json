@@ -1,0 +1,63 @@
+{
+  "raw_events": 5000,
+  "orphan_title_ids": [
+    "TT-0347",
+    "TT-0412",
+    "TT-0588"
+  ],
+  "quarantined_title_not_in_catalog": 180,
+  "pre_release_titles": [
+    "TT-0163",
+    "TT-0195",
+    "TT-0258"
+  ],
+  "quarantined_watched_before_release": 27,
+  "quarantined_duplicate_member_title_day": 7,
+  "watch_seconds_nulled_corrupt": 46,
+  "watch_seconds_missing_in_source": 67,
+  "device_type_filled_unknown": 131,
+  "country_filled_unknown": 47,
+  "kids_profile_mature_title_flagged": 46,
+  "cutoff_date": "2026-11-10",
+  "train_range": [
+    "2026-08-17",
+    "2026-11-09"
+  ],
+  "holdout_range": [
+    "2026-11-10",
+    "2026-11-16"
+  ],
+  "clean_events": 4786,
+  "train_events": 4428,
+  "holdout_events": 358,
+  "quarantined_total": 214,
+  "holdout_members_unseen_in_train": 0,
+  "holdout_titles_unseen_in_train": [
+    "TT-0195"
+  ],
+  "catalog_duplicate_names": {
+    "Dead Air Frequency": [
+      "TT-0054",
+      "TT-0155"
+    ],
+    "The Quiet Ward": [
+      "TT-0021",
+      "TT-0299"
+    ]
+  },
+  "catalog_missing_runtime": [
+    "TT-0008",
+    "TT-0060",
+    "TT-0097",
+    "TT-0119",
+    "TT-0143",
+    "TT-0170",
+    "TT-0194",
+    "TT-0239",
+    "TT-0262",
+    "TT-0288"
+  ],
+  "catalog_unreleased_titles": [
+    "TT-0300"
+  ]
+}
