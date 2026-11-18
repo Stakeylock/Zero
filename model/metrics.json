@@ -1,0 +1,41 @@
+{
+  "metric": "Hit Rate@10 (share of events whose true title is in the member's top 10)",
+  "cutoff_date": "2026-11-10",
+  "train_events": 4428,
+  "holdout_events": 358,
+  "holdout_members": 281,
+  "candidate_titles": "all catalog titles released by event date",
+  "model_hr10_mean": 0.5446927309036255,
+  "model_hr10_std": 0.010148547683125262,
+  "model_hr10_per_seed": [
+    0.5418994426727295,
+    0.5586591958999634,
+    0.5502793192863464,
+    0.5279329419136047,
+    0.5446927547454834
+  ],
+  "popularity_hr10": 0.22346368432044983,
+  "random_hr10": 0.02793296054005623,
+  "lift_vs_popularity": 0.32122904658317564,
+  "lift_95ci_member_bootstrap": [
+    0.24640783666162536,
+    0.39459148021232265
+  ],
+  "new_titles_only": {
+    "n_events": 254,
+    "model_hr10_mean": 0.6669291138648987,
+    "popularity_hr10": 0.22440944612026215,
+    "random_hr10": 0.03937007859349251
+  },
+  "chosen_config": {
+    "lr": 0.001,
+    "wd": 0.0001,
+    "use_id": false,
+    "tau": 0.2,
+    "drop": 0.2,
+    "epochs": 9,
+    "dim": 64
+  },
+  "tuning_val_hr10_popularity": 0.19783197343349457,
+  "tuning_val_hr10_model": 0.580548021528456
+}
